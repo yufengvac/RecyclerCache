@@ -1,8 +1,17 @@
 package com.yufeng.recyclercache;
 
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Context;
+import android.content.Intent;
 import android.content.res.Resources;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.NotificationManagerCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -39,6 +48,10 @@ public class MainActivity extends AppCompatActivity {
 
         manager = new LinearLayoutManager(this);
         recyclerView.setLayoutManager(manager);
+        recyclerView.getItemAnimator().setRemoveDuration(0);
+        recyclerView.getItemAnimator().setAddDuration(0);
+        recyclerView.getItemAnimator().setChangeDuration(0);
+        recyclerView.getItemAnimator().setMoveDuration(0);
         adapter = new ModelAdapter();
         adapter.setNight(isNight);
         adapter.setHasStableIds(true);
@@ -98,6 +111,13 @@ public class MainActivity extends AppCompatActivity {
 
 
         adapter.setData(list);
+
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                sendBroadcast();
+            }
+        }, 4000);
     }
 
     private void addData() {
@@ -126,16 +146,19 @@ public class MainActivity extends AppCompatActivity {
 
         adapter.getData().addAll(0, list);
         adapter.notifyItemRangeInserted(1, list.size());
-//        adapter.notifyDataSetChanged();
 //        recyclerView.smoothScrollToPosition(list.size());
 
 //        MySmoothScoller linearSmoothScroller = new MySmoothScoller(recyclerView.getContext());
 //        linearSmoothScroller.setTargetPosition(list.size());
 //        recyclerView.getLayoutManager().startSmoothScroll(linearSmoothScroller);
-        moveToPosition(manager, list.size() + 1);
+//        moveToPosition(manager, list.size() + 1);
+        size = list.size();
+//        manager.scrollToPositionWithOffset(list.size() + 1, dip2px(MainActivity.this, 50));
+        manager.scrollToPosition(list.size() + 1);
 
         index++;
         isLoading = false;
+//
     }
 
     private void addMoreData() {
@@ -170,7 +193,7 @@ public class MainActivity extends AppCompatActivity {
 //        manager.scrollToPositionWithOffset(size, -dip2px(MainActivity.this, 50));
 
         manager.setStackFromEnd(false);
-        manager.scrollToPositionWithOffset(size + 1, getResources().getDisplayMetrics().heightPixels - dip2px(MainActivity.this, 50) );
+        manager.scrollToPositionWithOffset(size + 1, getResources().getDisplayMetrics().heightPixels - dip2px(MainActivity.this, 50));
 //        adapter.notifyDataSetChanged();
 //        recyclerView.smoothScrollToPosition(list.size());
 
@@ -181,11 +204,49 @@ public class MainActivity extends AppCompatActivity {
         index = 0;
     }
 
+    private void sendBroadcast() {
+//        NotificationCompat.Builder builder = new NotificationCompat.Builder(this)
+//                .setSmallIcon(R.mipmap.ic_launcher)
+//                .setContentTitle("支付宝通知")
+//                .setContentText("成功收款0.02元，享免费提现等更多专享服务");
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this)
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setContentTitle("微信支付")
+                .setContentText("微信支付收款0.01元");
+
+//        NotificationCompat.Builder builder = new NotificationCompat.Builder(this)
+//                .setSmallIcon(R.mipmap.ic_launcher)
+//                .setContentTitle("支付宝消息")
+//                .setContentText("洪鹏已成功向你转了一笔钱");
+
+        //设置点击通知之后的响应，启动SettingActivity类
+//        Intent resultIntent = new Intent(this,SettingActivity.class);
+//
+//        PendingIntent pendingIntent = PendingIntent.getActivity(this,0,resultIntent,PendingIntent.FLAG_UPDATE_CURRENT);
+//        builder.setContentIntent(pendingIntent);
+
+
+        NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
+            NotificationChannel channel = new NotificationChannel(getPackageName(), "1", NotificationManager.IMPORTANCE_DEFAULT);
+            channel.enableVibration(true);
+            notificationManager.createNotificationChannel(channel);
+        }
+
+        Notification notification = builder.build();
+        notification.flags = Notification.FLAG_ONGOING_EVENT;
+
+        notificationManager.notify(0, builder.build());
+
+    }
+
     public static int getStatusBarHeight(Context context) {
         Resources resources = context.getResources();
         int resourceId = resources.getIdentifier("status_bar_height", "dimen", "android");
         return resources.getDimensionPixelSize(resourceId);
     }
+
     public void moveToPosition(LinearLayoutManager manager, int n) {
         manager.scrollToPositionWithOffset(n, dip2px(MainActivity.this, 50));
         manager.setStackFromEnd(true);
